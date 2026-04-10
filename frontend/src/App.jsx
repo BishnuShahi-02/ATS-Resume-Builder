@@ -1,69 +1,50 @@
 import { useRef, useEffect } from 'react';
-import { AppProvider, useAppState } from './context/AppContext';
+import { useAppState } from './context/AppContext';
+import { analyzeResume } from './services/api';
 import Header from './components/common/Header';
-import TabNav from './components/common/TabNav';
+import StepWizard from './components/common/StepWizard';
 import ResumeUpload from './components/ScoreChecker/ResumeUpload';
 import JDInput from './components/ScoreChecker/JDInput';
-import ScoreDisplay from './components/ScoreChecker/ScoreDisplay';
 import AnalysisLoader from './components/ScoreChecker/AnalysisLoader';
-import ResumeForm from './components/Builder/ResumeForm';
-import ResumePreview from './components/Builder/ResumePreview';
-import TemplateSelector from './components/Builder/TemplateSelector';
-import { analyzeResume } from './services/api';
+import ScoreDisplay from './components/ScoreChecker/ScoreDisplay';
 
-function HeroSection() {
-  return (
-    <section className="hero-section animate-fade-in">
-      <h1 className="hero-title">
-        Land More Interviews with <span className="hero-gradient">AI-Powered</span> Resumes
-      </h1>
-      <p className="hero-subtitle">
-        Check your ATS score, get AI optimization, and build pixel-perfect resumes — all in one place.
-      </p>
-      <div className="hero-steps">
-        <div className="hero-step">
-          <span className="hero-step-icon">📄</span> Upload Resume
-        </div>
-        <span className="hero-step-arrow">→</span>
-        <div className="hero-step">
-          <span className="hero-step-icon">🤖</span> AI Analysis
-        </div>
-        <span className="hero-step-arrow">→</span>
-        <div className="hero-step">
-          <span className="hero-step-icon">✨</span> Optimized Resume
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AppContent() {
+export default function App() {
   const { state, dispatch } = useAppState();
   const resultsRef = useRef(null);
 
-  const canAnalyze = (
-    (state.inputMode === 'file' && state.resumeFile) ||
-    (state.inputMode === 'text' && state.resumeText.trim().length >= 50)
-  ) && state.jdText.trim().length >= 20;
+  const {
+    resumeFile,
+    resumeText,
+    jdText,
+    inputMode,
+    isAnalyzing,
+    analysisResult,
+    analysisError,
+    optimizeResult,
+  } = state;
 
-  // Auto-scroll to results when analysis starts or completes
-  useEffect(() => {
-    if ((state.isAnalyzing || state.analysisResult) && resultsRef.current) {
-      setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    }
-  }, [state.isAnalyzing, state.analysisResult]);
+  // Determine current step
+  const getCurrentStep = () => {
+    if (optimizeResult) return 3;
+    if (analysisResult || isAnalyzing) return 2;
+    return 1;
+  };
+
+  const currentStep = getCurrentStep();
+
+  // Can we analyze?
+  const hasResume = inputMode === 'file' ? !!resumeFile : resumeText.trim().length > 0;
+  const hasJD = jdText.trim().length >= 20;
+  const canAnalyze = hasResume && hasJD && !isAnalyzing;
 
   const handleAnalyze = async () => {
-    dispatch({ type: 'SET_OPTIMIZE_RESULT', payload: null });
-    dispatch({ type: 'SET_OPTIMIZE_ERROR', payload: null });
     dispatch({ type: 'SET_ANALYZING', payload: true });
+    dispatch({ type: 'SET_OPTIMIZE_RESULT', payload: null });
     try {
       const result = await analyzeResume(
-        state.inputMode === 'file' ? state.resumeFile : null,
-        state.inputMode === 'text' ? state.resumeText : null,
-        state.jdText,
+        inputMode === 'file' ? resumeFile : null,
+        inputMode === 'text' ? resumeText : null,
+        jdText,
       );
       dispatch({ type: 'SET_ANALYSIS_RESULT', payload: result });
     } catch (err) {
@@ -71,87 +52,77 @@ function AppContent() {
     }
   };
 
+  // Auto-scroll to results when analysis completes
+  useEffect(() => {
+    if ((analysisResult || isAnalyzing) && resultsRef.current) {
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
+    }
+  }, [analysisResult, isAnalyzing]);
+
+  // Reset to step 1
+  const handleReset = () => {
+    dispatch({ type: 'SET_ANALYSIS_RESULT', payload: null });
+    dispatch({ type: 'SET_OPTIMIZE_RESULT', payload: null });
+    dispatch({ type: 'SET_ANALYZING', payload: false });
+  };
+
   return (
-    <>
+    <div>
       <Header />
-      <main className="app-container">
-        <HeroSection />
-        <TabNav />
+      <StepWizard currentStep={currentStep} />
 
-        {/* ====================== SCORE CHECKER & OPTIMIZER ====================== */}
-        {state.activeTab === 'checker' && (
-          <div className="page-section animate-fade-in">
-            {/* Inputs — Side by Side */}
-            <div className="checker-inputs">
-              <ResumeUpload />
-              <JDInput />
-            </div>
+      {/* ═══ Step 1: Input ═══ */}
+      {currentStep === 1 && (
+        <div className="animate-fade-in">
+          <div className="input-grid">
+            <ResumeUpload />
+            <JDInput />
+          </div>
 
-            {/* Analyze Button */}
-            <div className="checker-actions">
-              <button
-                id="analyze-btn"
-                className="btn btn-primary btn-lg"
-                style={{ minWidth: 280 }}
-                disabled={!canAnalyze || state.isAnalyzing}
-                onClick={handleAnalyze}
-              >
-                {state.isAnalyzing ? (
-                  <>
-                    <span className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }} />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>📊 Analyze ATS Score</>
-                )}
-              </button>
-
-              {state.analysisError && (
-                <div className="glass-card-static animate-fade-in" style={{
-                  borderColor: 'var(--accent-red)',
-                  background: 'var(--accent-red-dim)',
-                  maxWidth: 500,
-                }}>
-                  <p style={{ color: 'var(--accent-red)', fontWeight: 600, textAlign: 'center' }}>
-                    ❌ {state.analysisError}
-                  </p>
-                </div>
+          <div className="cta-container">
+            <button
+              className="btn btn-primary btn-lg"
+              disabled={!canAnalyze}
+              onClick={handleAnalyze}
+            >
+              {isAnalyzing ? (
+                <>
+                  <span className="spinner spinner-sm" />
+                  Analyzing...
+                </>
+              ) : (
+                <>🎯 Analyze ATS Score →</>
               )}
-            </div>
-
-            {/* Results — Full Width */}
-            {state.isAnalyzing ? (
-              <div className="checker-results-full" ref={resultsRef}>
-                <AnalysisLoader />
-              </div>
-            ) : state.analysisResult ? (
-              <div className="checker-results-full" ref={resultsRef}>
-                <ScoreDisplay result={state.analysisResult} />
-              </div>
-            ) : null}
+            </button>
           </div>
+
+          {analysisError && (
+            <div style={{ textAlign: 'center', padding: '0 var(--space-2xl)' }}>
+              <p style={{ color: 'var(--accent-red)', fontSize: 'var(--font-sm)' }}>
+                ❌ {analysisError}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ Step 2: Loading / Results ═══ */}
+      <div ref={resultsRef}>
+        {isAnalyzing && currentStep === 2 && (
+          <AnalysisLoader />
         )}
 
-        {/* ====================== RESUME BUILDER ====================== */}
-        {state.activeTab === 'builder' && (
-          <div className="page-section animate-fade-in">
-            <TemplateSelector />
-
-            <div className="builder-layout">
-              <ResumeForm />
-              <ResumePreview />
-            </div>
-          </div>
+        {analysisResult && !isAnalyzing && currentStep === 2 && (
+          <ScoreDisplay result={analysisResult} onReset={handleReset} />
         )}
-      </main>
-    </>
-  );
-}
+      </div>
 
-export default function App() {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+      {/* ═══ Step 3: Optimization Results ═══ */}
+      {currentStep === 3 && analysisResult && (
+        <ScoreDisplay result={analysisResult} onReset={handleReset} />
+      )}
+    </div>
   );
 }

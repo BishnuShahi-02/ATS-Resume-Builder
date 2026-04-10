@@ -4,42 +4,27 @@ import { useAppState } from '../../context/AppContext';
 export default function ResumeUpload() {
   const { state, dispatch } = useAppState();
   const fileInputRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
-  const handleFileSelect = (file) => {
-    if (!file) return;
-    const validTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain',
-    ];
-    const validExts = ['.pdf', '.docx', '.txt'];
-    const ext = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+  const { inputMode, resumeFile, resumeText } = state;
 
-    if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
-      alert('Please upload a PDF, DOCX, or TXT file.');
-      return;
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      dispatch({ type: 'SET_RESUME_FILE', payload: file });
     }
-    dispatch({ type: 'SET_RESUME_FILE', payload: file });
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    handleFileSelect(file);
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      dispatch({ type: 'SET_RESUME_FILE', payload: file });
+    }
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const removeFile = () => {
+  const handleRemoveFile = () => {
     dispatch({ type: 'SET_RESUME_FILE', payload: null });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -47,81 +32,63 @@ export default function ResumeUpload() {
   return (
     <div className="glass-card">
       <div className="card-header">
-        <div className="card-header-icon blue">📄</div>
-        <div>
-          <div className="card-title">Resume</div>
-          <div className="card-subtitle">Upload your resume or paste the text</div>
-        </div>
+        <span className="card-icon">📄</span>
+        <span className="card-title">Resume</span>
       </div>
 
-      {/* Toggle */}
-      <div className="input-toggle">
+      {/* Tab toggle */}
+      <div className="input-tabs">
         <button
-          className={`input-toggle-btn ${state.inputMode === 'file' ? 'active' : ''}`}
+          className={`input-tab ${inputMode === 'file' ? 'active' : ''}`}
           onClick={() => dispatch({ type: 'SET_INPUT_MODE', payload: 'file' })}
         >
           📁 Upload File
         </button>
         <button
-          className={`input-toggle-btn ${state.inputMode === 'text' ? 'active' : ''}`}
+          className={`input-tab ${inputMode === 'text' ? 'active' : ''}`}
           onClick={() => dispatch({ type: 'SET_INPUT_MODE', payload: 'text' })}
         >
-          ✏️ Paste Text
+          📝 Paste Text
         </button>
       </div>
 
-      {state.inputMode === 'file' ? (
+      {inputMode === 'file' ? (
         <>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.docx,.txt"
-            style={{ display: 'none' }}
-            onChange={(e) => handleFileSelect(e.target.files[0])}
-            id="resume-file-input"
-          />
-          <div
-            className={`upload-zone ${isDragging ? 'dragging' : ''} ${state.resumeFile ? 'has-file' : ''}`}
-            style={{ padding: 'var(--space-xl) var(--space-lg)' }}
-            onClick={() => fileInputRef.current?.click()}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-          >
-            {state.resumeFile ? (
-              <div className="upload-file-info">
-                <span>✅</span>
-                <span className="upload-file-name">{state.resumeFile.name}</span>
-                <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}>
-                  ({(state.resumeFile.size / 1024).toFixed(0)} KB)
-                </span>
-                <button
-                  className="upload-remove"
-                  onClick={(e) => { e.stopPropagation(); removeFile(); }}
-                >
-                  ✕
-                </button>
+          {!resumeFile ? (
+            <div
+              className={`upload-zone ${dragOver ? 'drag-over' : ''}`}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+            >
+              <div className="upload-icon">⬆</div>
+              <div className="upload-text">
+                <span className="link">Click to upload</span> or drag and drop
               </div>
-            ) : (
-              <>
-                <div className="upload-icon" style={{ fontSize: 32, marginBottom: 'var(--space-sm)' }}>📤</div>
-                <div className="upload-text">
-                  <strong>Click to upload</strong> or drag and drop
-                </div>
-                <div className="upload-formats">PDF, DOCX, or TXT (max 10MB)</div>
-              </>
-            )}
-          </div>
+              <div className="upload-subtext">PDF, DOCX, or TXT (max 10MB)</div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx,.txt"
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+              />
+            </div>
+          ) : (
+            <div className="file-uploaded">
+              <span style={{ fontSize: '1.2rem' }}>✅</span>
+              <span className="file-name">{resumeFile.name}</span>
+              <button className="file-remove" onClick={handleRemoveFile}>✕ Remove</button>
+            </div>
+          )}
         </>
       ) : (
         <textarea
-          id="resume-text-input"
           className="form-textarea"
-          style={{ minHeight: 160 }}
-          placeholder="Paste your resume text here..."
-          value={state.resumeText}
+          placeholder="Paste your full resume text here..."
+          value={resumeText}
           onChange={(e) => dispatch({ type: 'SET_RESUME_TEXT', payload: e.target.value })}
-          rows={8}
         />
       )}
     </div>
