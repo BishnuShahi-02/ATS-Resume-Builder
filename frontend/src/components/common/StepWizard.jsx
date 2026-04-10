@@ -5,33 +5,35 @@ export default function StepWizard({ currentStep }) {
     { num: 3, label: 'Optimize' },
   ];
 
+  const getState = (stepNum) => {
+    if (currentStep > stepNum) return 'completed';
+    if (currentStep === stepNum) return 'active';
+    return 'upcoming';
+  };
+
   return (
-    <div className="step-wizard">
-      {steps.map((step, i) => (
-        <div key={step.num} style={{ display: 'flex', alignItems: 'center' }}>
-          <div className="step-item">
-            <div
-              className={`step-circle ${
-                currentStep > step.num ? 'completed' :
-                currentStep === step.num ? 'active' : ''
-              }`}
-            >
-              {currentStep > step.num ? '✓' : step.num}
+    <div className="step-wizard-bar">
+      <div className="step-wizard">
+        {steps.map((step, i) => (
+          <div key={step.num} style={{ display: 'flex', alignItems: 'center' }}>
+            <div className="step-item">
+              <div className={`step-circle ${getState(step.num)}`}>
+                {currentStep > step.num ? '✓' : step.num}
+              </div>
+              <span className={`step-label ${getState(step.num)}`}>
+                {step.label}
+              </span>
             </div>
-            <span
-              className={`step-label ${
-                currentStep > step.num ? 'completed' :
-                currentStep === step.num ? 'active' : ''
-              }`}
-            >
-              {step.label}
-            </span>
+            {i < steps.length - 1 && (
+              <div
+                className={`step-connector ${
+                  currentStep > step.num ? 'completed' : 'incomplete'
+                }`}
+              />
+            )}
           </div>
-          {i < steps.length - 1 && (
-            <div className={`step-connector ${currentStep > step.num ? 'completed' : ''}`} />
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

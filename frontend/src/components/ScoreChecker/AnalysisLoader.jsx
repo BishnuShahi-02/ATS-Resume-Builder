@@ -13,19 +13,23 @@ export default function AnalysisLoader() {
   useEffect(() => {
     const interval = setInterval(() => {
       setTextIndex((prev) => (prev + 1) % loadingTexts.length);
-    }, 2500);
+    }, 1500);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="loading-card glass-card-static animate-fade-in">
-      <div className="spinner" />
-      <h3 className="loading-title">Analyzing your resume...</h3>
-      <p className="loading-subtitle">{loadingTexts[textIndex]}</p>
-      <div className="loading-dots">
-        <span />
-        <span />
-        <span />
+    <div className="loading-container">
+      <div className="glass-card loading-card animate-fade-in">
+        <div className="spinner-ring" />
+        <h3 className="loading-title">Analyzing your resume...</h3>
+        <div className="loading-progress-text" key={textIndex}>
+          {loadingTexts[textIndex]}
+        </div>
+        <div className="loading-dots">
+          <span />
+          <span />
+          <span />
+        </div>
       </div>
     </div>
   );

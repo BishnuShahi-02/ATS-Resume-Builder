@@ -6,12 +6,12 @@ export default function JDInput() {
   return (
     <div className="glass-card">
       <div className="card-header">
-        <span className="card-icon">📋</span>
+        <span className="card-icon" style={{ color: 'var(--blue-500)' }}>📋</span>
         <span className="card-title">Job Description</span>
       </div>
 
       <textarea
-        className="form-textarea"
+        className="form-textarea focus-blue textarea-jd"
         placeholder="Paste the full job description here including requirements, responsibilities, and qualifications..."
         value={state.jdText}
         onChange={(e) => dispatch({ type: 'SET_JD_TEXT', payload: e.target.value })}

@@ -16,63 +16,48 @@ export default function AnimatedGauge({ score = 0, size = 160 }) {
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = Math.round(start + (end - start) * eased);
       setAnimatedScore(current);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
+      if (progress < 1) requestAnimationFrame(animate);
     }
 
     requestAnimationFrame(animate);
     prevScore.current = end;
   }, [score]);
 
-  const strokeWidth = 10;
-  const radius = (size - strokeWidth * 2) / 2;
+  const strokeWidth = 12;
+  const radius = 70;
+  const viewSize = (radius + strokeWidth) * 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (animatedScore / 100) * circumference;
+  const center = viewSize / 2;
 
   const getStrokeColor = () => {
-    if (animatedScore >= 70) return 'url(#gauge-grad-high)';
-    if (animatedScore >= 40) return 'url(#gauge-grad-mid)';
-    return 'url(#gauge-grad-low)';
+    if (animatedScore >= 70) return '#10B981';
+    if (animatedScore >= 40) return '#F59E0B';
+    return '#EF4444';
   };
 
-  const getTextColor = () => {
-    if (animatedScore >= 70) return '#10b981';
-    if (animatedScore >= 40) return '#f59e0b';
-    return '#ef4444';
-  };
+  const getBgStroke = () => 'rgba(255, 255, 255, 0.1)';
 
   return (
     <div className="gauge-container" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <defs>
-          <linearGradient id="gauge-grad-high" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#10b981" />
-            <stop offset="100%" stopColor="#06b6d4" />
-          </linearGradient>
-          <linearGradient id="gauge-grad-mid" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#f59e0b" />
-            <stop offset="100%" stopColor="#f97316" />
-          </linearGradient>
-          <linearGradient id="gauge-grad-low" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ef4444" />
-            <stop offset="100%" stopColor="#f97316" />
-          </linearGradient>
-        </defs>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${viewSize} ${viewSize}`}
+      >
         {/* Background circle */}
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={center}
+          cy={center}
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.08)"
+          stroke={getBgStroke()}
           strokeWidth={strokeWidth}
         />
-        {/* Animated fill */}
+        {/* Progress arc */}
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={center}
+          cy={center}
           r={radius}
           fill="none"
           stroke={getStrokeColor()}
@@ -83,15 +68,14 @@ export default function AnimatedGauge({ score = 0, size = 160 }) {
           style={{
             transform: 'rotate(-90deg)',
             transformOrigin: 'center',
-            transition: 'stroke-dashoffset 0.3s ease',
           }}
         />
       </svg>
       <div className="gauge-text">
-        <div className="gauge-score" style={{ color: getTextColor() }}>
+        <div className="gauge-score" style={{ color: getStrokeColor() }}>
           {animatedScore}
         </div>
-        <div className="gauge-label">/100</div>
+        <div className="gauge-subscript">/100</div>
       </div>
     </div>
   );

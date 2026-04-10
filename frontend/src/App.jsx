@@ -52,7 +52,7 @@ export default function App() {
     }
   };
 
-  // Auto-scroll to results when analysis completes
+  // Auto-scroll to results
   useEffect(() => {
     if ((analysisResult || isAnalyzing) && resultsRef.current) {
       setTimeout(() => {
@@ -69,60 +69,60 @@ export default function App() {
   };
 
   return (
-    <div>
+    <>
       <Header />
+      <div className="navbar-spacer" />
       <StepWizard currentStep={currentStep} />
 
-      {/* ═══ Step 1: Input ═══ */}
-      {currentStep === 1 && (
-        <div className="animate-fade-in">
-          <div className="input-grid">
-            <ResumeUpload />
-            <JDInput />
-          </div>
-
-          <div className="cta-container">
-            <button
-              className="btn btn-primary btn-lg"
-              disabled={!canAnalyze}
-              onClick={handleAnalyze}
-            >
-              {isAnalyzing ? (
-                <>
-                  <span className="spinner spinner-sm" />
-                  Analyzing...
-                </>
-              ) : (
-                <>🎯 Analyze ATS Score →</>
-              )}
-            </button>
-          </div>
-
-          {analysisError && (
-            <div style={{ textAlign: 'center', padding: '0 var(--space-2xl)' }}>
-              <p style={{ color: 'var(--accent-red)', fontSize: 'var(--font-sm)' }}>
-                ❌ {analysisError}
-              </p>
+      <div className="main-content">
+        {/* ═══ Step 1: Input ═══ */}
+        {currentStep === 1 && (
+          <div className="input-section animate-fade-in">
+            <div className="input-grid">
+              <ResumeUpload />
+              <JDInput />
             </div>
-          )}
-        </div>
-      )}
 
-      {/* ═══ Step 2: Loading / Results ═══ */}
-      <div ref={resultsRef}>
-        {isAnalyzing && currentStep === 2 && (
-          <AnalysisLoader />
+            <div className="cta-container">
+              <button
+                className="btn btn-primary btn-analyze"
+                disabled={!canAnalyze}
+                onClick={handleAnalyze}
+              >
+                {isAnalyzing ? (
+                  <><span className="spinner-sm" /> Analyzing...</>
+                ) : (
+                  <>🎯 Analyze ATS Score →</>
+                )}
+              </button>
+            </div>
+
+            {analysisError && (
+              <div style={{ textAlign: 'center', padding: '0 24px' }}>
+                <p style={{ color: 'var(--red-500)', fontSize: 14 }}>
+                  ❌ {analysisError}
+                </p>
+              </div>
+            )}
+          </div>
         )}
 
-        {analysisResult && !isAnalyzing && currentStep === 2 && (
+        {/* ═══ Step 2: Loading / Results ═══ */}
+        <div ref={resultsRef}>
+          {isAnalyzing && currentStep === 2 && (
+            <AnalysisLoader />
+          )}
+
+          {analysisResult && !isAnalyzing && currentStep === 2 && (
+            <ScoreDisplay result={analysisResult} onReset={handleReset} />
+          )}
+        </div>
+
+        {/* ═══ Step 3: Optimization Results ═══ */}
+        {currentStep === 3 && analysisResult && (
           <ScoreDisplay result={analysisResult} onReset={handleReset} />
         )}
       </div>
-
-      {/* ═══ Step 3: Optimization Results ═══ */}
-      {currentStep === 3 && analysisResult && (
-        <ScoreDisplay result={analysisResult} onReset={handleReset} />
-      )}
-    </div>
+    </>
   );
 }

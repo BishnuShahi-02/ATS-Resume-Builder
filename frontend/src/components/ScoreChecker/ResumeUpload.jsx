@@ -10,18 +10,14 @@ export default function ResumeUpload() {
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      dispatch({ type: 'SET_RESUME_FILE', payload: file });
-    }
+    if (file) dispatch({ type: 'SET_RESUME_FILE', payload: file });
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) {
-      dispatch({ type: 'SET_RESUME_FILE', payload: file });
-    }
+    if (file) dispatch({ type: 'SET_RESUME_FILE', payload: file });
   };
 
   const handleRemoveFile = () => {
@@ -29,10 +25,15 @@ export default function ResumeUpload() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const formatSize = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  };
+
   return (
     <div className="glass-card">
       <div className="card-header">
-        <span className="card-icon">📄</span>
+        <span className="card-icon" style={{ color: 'var(--emerald-500)' }}>📄</span>
         <span className="card-title">Resume</span>
       </div>
 
@@ -53,7 +54,7 @@ export default function ResumeUpload() {
       </div>
 
       {inputMode === 'file' ? (
-        <>
+        <div style={{ marginTop: 24 }}>
           {!resumeFile ? (
             <div
               className={`upload-zone ${dragOver ? 'drag-over' : ''}`}
@@ -62,9 +63,9 @@ export default function ResumeUpload() {
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
             >
-              <div className="upload-icon">⬆</div>
+              <div className="upload-icon">☁️</div>
               <div className="upload-text">
-                <span className="link">Click to upload</span> or drag and drop
+                <span className="upload-link">Click to upload</span> or drag and drop
               </div>
               <div className="upload-subtext">PDF, DOCX, or TXT (max 10MB)</div>
               <input
@@ -77,19 +78,27 @@ export default function ResumeUpload() {
             </div>
           ) : (
             <div className="file-uploaded">
-              <span style={{ fontSize: '1.2rem' }}>✅</span>
-              <span className="file-name">{resumeFile.name}</span>
-              <button className="file-remove" onClick={handleRemoveFile}>✕ Remove</button>
+              <div className="file-info">
+                <div className="file-icon-box">📄</div>
+                <div className="file-details">
+                  <span className="file-name">{resumeFile.name}</span>
+                  <span className="file-size">{formatSize(resumeFile.size)}</span>
+                </div>
+              </div>
+              <button className="file-remove" onClick={handleRemoveFile}>✕</button>
             </div>
           )}
-        </>
+        </div>
       ) : (
-        <textarea
-          className="form-textarea"
-          placeholder="Paste your full resume text here..."
-          value={resumeText}
-          onChange={(e) => dispatch({ type: 'SET_RESUME_TEXT', payload: e.target.value })}
-        />
+        <div style={{ marginTop: 24 }}>
+          <textarea
+            className="form-textarea focus-emerald textarea-resume"
+            placeholder="Paste your resume text here..."
+            value={resumeText}
+            onChange={(e) => dispatch({ type: 'SET_RESUME_TEXT', payload: e.target.value })}
+          />
+          <div className="char-count">{resumeText.length} characters</div>
+        </div>
       )}
     </div>
   );
