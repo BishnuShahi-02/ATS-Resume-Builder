@@ -64,58 +64,142 @@ export default function ScoreDisplay({ result, onReset }) {
   }, [isOptimizing, optimizeResult]);
 
   // ── PDF download ──
+  // Uses the same CSS classes as the preview so formatting is identical
   const handleDownloadPDF = () => {
     if (!optimizeResult?.optimized_resume) return;
+
+    // These styles mirror the .resume-preview-frame classes from index.css
     const pdfStyles = `
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: 'Inter', sans-serif; font-size: 10pt; line-height: 1.5; color: #1a1a1a; padding: 0.5in 0.6in; }
-      h1 { font-size: 18pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-      .contact { font-size: 9pt; color: #555; margin-bottom: 12px; }
-      h2 { font-size: 11pt; font-weight: 700; text-transform: uppercase; border-bottom: 1.5px solid #333; padding-bottom: 2px; margin-top: 14px; margin-bottom: 6px; }
-      h3 { font-size: 10.5pt; font-weight: 600; margin-bottom: 1px; }
-      .role-line { display: flex; justify-content: space-between; align-items: baseline; }
-      .dates { font-size: 9pt; color: #555; }
-      .company { font-size: 9.5pt; color: #444; font-style: italic; margin-bottom: 3px; }
-      ul { padding-left: 18px; margin-bottom: 6px; }
-      li { font-size: 9.5pt; margin-bottom: 2px; }
-      .skills-line { font-size: 9.5pt; margin-bottom: 3px; }
-      @media print { body { padding: 0.4in 0.5in; } }
-      @page { margin: 0; size: letter; }`;
 
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #111827;
+        background: #FFFFFF;
+        padding: 32px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* Name */
+      .resume-name {
+        font-size: 30px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+        color: #111827;
+      }
+
+      /* Contact line */
+      .resume-contact {
+        font-size: 14px;
+        color: #4B5563;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid #D1D5DB;
+      }
+
+      /* Section headings */
+      .resume-section-title {
+        font-size: 18px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border-bottom: 1px solid #9CA3AF;
+        padding-bottom: 4px;
+        margin-top: 24px;
+        margin-bottom: 8px;
+        color: #111827;
+      }
+
+      /* Job header row */
+      .resume-job-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+
+      .resume-job-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #111827;
+      }
+
+      .resume-dates {
+        font-size: 14px;
+        color: #4B5563;
+      }
+
+      .resume-company {
+        font-size: 14px;
+        color: #4B5563;
+        font-style: italic;
+        margin-bottom: 8px;
+      }
+
+      /* Bullets */
+      .resume-bullets {
+        padding-left: 20px;
+        margin-bottom: 8px;
+      }
+
+      .resume-bullets li {
+        font-size: 14px;
+        color: #1F2937;
+        margin-bottom: 4px;
+      }
+
+      /* Body text */
+      .resume-text {
+        font-size: 14px;
+        color: #1F2937;
+        line-height: 1.6;
+      }
+
+      /* Skills */
+      .resume-skills {
+        font-size: 14px;
+        color: #1F2937;
+      }
+
+      @media print {
+        body { padding: 0.4in 0.5in; }
+      }
+
+      @page {
+        margin: 0;
+        size: letter;
+      }`;
+
+    // Grab innerHTML from the live preview (preserves user edits)
     let bodyContent = '';
     if (previewRef.current) {
       bodyContent = previewRef.current.innerHTML;
-    } else {
-      const r = optimizeResult.optimized_resume;
-      const info = r.personal_info || {};
-      const parts = [info.email, info.phone, info.location, info.linkedin].filter(Boolean);
-      bodyContent = `
-        ${info.name ? `<h1>${info.name}</h1>` : ''}
-        ${parts.length ? `<div class="contact">${parts.join(' • ')}</div>` : ''}
-        ${r.professional_summary ? `<h2>Professional Summary</h2><p style="font-size:9.5pt">${r.professional_summary}</p>` : ''}
-        ${r.experience?.length ? `<h2>Work Experience</h2>${r.experience.map(e => `
-          <div class="role-line"><h3>${e.title||''}</h3><span class="dates">${e.start_date||''} – ${e.end_date||''}</span></div>
-          <div class="company">${e.company||''}${e.location?', '+e.location:''}</div>
-          ${e.bullets?.length ? '<ul>'+e.bullets.map(b=>`<li>${b}</li>`).join('')+'</ul>':''}
-        `).join('')}` : ''}
-        ${r.education?.length ? `<h2>Education</h2>${r.education.map(e => `
-          <div class="role-line"><h3>${e.degree||''}${e.field?' in '+e.field:''}</h3><span class="dates">${e.graduation_date||''}</span></div>
-          <div class="company">${e.institution||''}</div>
-        `).join('')}` : ''}
-        ${r.skills ? `<h2>Skills</h2>
-          ${r.skills.technical?.length ? `<div class="skills-line"><strong>Technical:</strong> ${r.skills.technical.join(', ')}</div>` : ''}
-          ${r.skills.tools?.length ? `<div class="skills-line"><strong>Tools:</strong> ${r.skills.tools.join(', ')}</div>` : ''}
-        ` : ''}
-        ${r.certifications?.length ? `<h2>Certifications</h2>${r.certifications.map(c=>`<div style="font-size:9.5pt"><strong>${c.name}</strong>${c.issuer?' — '+c.issuer:''}</div>`).join('')}` : ''}`;
     }
 
     const title = optimizeResult.optimized_resume?.personal_info?.name || 'Resume';
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>${pdfStyles}</style></head><body>${bodyContent}</body></html>`;
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${title}</title>
+  <style>${pdfStyles}</style>
+</head>
+<body>${bodyContent}</body>
+</html>`;
+
     const w = window.open('', '_blank');
+    if (!w) {
+      alert('Please allow pop-ups to download your resume as PDF.');
+      return;
+    }
     w.document.write(html);
     w.document.close();
-    w.onload = () => setTimeout(() => w.print(), 300);
+    w.onload = () => setTimeout(() => w.print(), 400);
   };
 
   // ═══════════════════════════════════════
